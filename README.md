@@ -126,3 +126,24 @@ the build may wait for a free executor. `jenkins build --wait` and
 
 Core functionality (auth, build trigger + wait, status, console logs, MCP
 server) is implemented and tested against a real Jenkins instance.
+
+## Roadmap
+
+Not urgent, but worth knowing about — pull requests welcome:
+
+- `job list` has no filter/pagination yet; on a server with hundreds of jobs
+  it dumps everything. A name filter (`jenkins job list <substring>`) would help.
+- `jenkins build <job>` has no confirmation prompt before triggering a real
+  build. Consider a `--yes` flag or an interactive confirmation by default.
+- Single Jenkins instance only (config file + env var overrides). No
+  multi-instance/alias support (`--instance staging`) yet.
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the
+local setup, coding conventions, and pull request checklist. Found a bug or
+have a feature idea? [Open an issue](https://github.com/MarcosT96/jenkins-cli/issues/new/choose).
+
+## License
+
+[MIT](LICENSE)
