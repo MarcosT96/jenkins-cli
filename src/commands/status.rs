@@ -29,7 +29,7 @@ pub fn run(args: StatusArgs, global: &GlobalArgs) -> Result<()> {
 
 /// Resolve a build from a queue item URL: if Jenkins hasn't assigned an
 /// executor yet, report "pending"; otherwise fetch the build itself.
-fn resolve_from_queue(client: &Client, queue_url: &str) -> Result<BuildInfo> {
+pub fn resolve_from_queue(client: &Client, queue_url: &str) -> Result<BuildInfo> {
     let item: QueueItem = client.get_json_absolute(&api_path(queue_url))?;
 
     if item.cancelled {
