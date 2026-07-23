@@ -27,7 +27,7 @@ pub fn run(args: LogsArgs, _global: &GlobalArgs) -> Result<()> {
     }
 }
 
-fn build_path(job: &str, build_number: Option<u64>) -> String {
+pub fn build_path(job: &str, build_number: Option<u64>) -> String {
     match build_number {
         Some(n) => format!("/job/{job}/{n}/"),
         None => format!("/job/{job}/lastBuild/"),
@@ -69,7 +69,7 @@ fn follow(client: &Client, job: &str, build_path: &str, poll_secs: u64) -> Resul
     }
 }
 
-fn job_not_found(err: AppError, job: &str) -> AppError {
+pub fn job_not_found(err: AppError, job: &str) -> AppError {
     match err {
         AppError::Status(404, _) => AppError::JobNotFound(job.to_string()),
         other => other,
