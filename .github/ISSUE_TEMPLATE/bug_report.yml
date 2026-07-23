@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in jenkins-cli isn't working as expected.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you run, and what went wrong?
+      placeholder: "e.g. `jenkins status my-job` returned an error instead of the build status."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: jenkins-cli version
+      description: Output of `jenkins --version`.
+      placeholder: "jenkins 0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: jenkins-version
+    attributes:
+      label: Jenkins server version (if known)
+      description: Shown at the bottom of any Jenkins page, or in `/api/json`.
+  - type: dropdown
+    id: os
+    attributes:
+      label: Platform
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux (x86_64)
+        - Linux (aarch64)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Interface
+      description: Did this happen using the CLI directly, or the MCP server?
+      options:
+        - CLI
+        - MCP server (jenkins mcp serve)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output / error
+      description: Paste the command output. Redact any tokens, usernames, or private URLs.
+      render: shell
