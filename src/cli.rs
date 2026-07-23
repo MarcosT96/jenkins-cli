@@ -30,6 +30,8 @@ pub enum Command {
     Status(StatusArgs),
     /// Job commands.
     Job(JobArgs),
+    /// Fetch a build's console log.
+    Logs(LogsArgs),
     /// Run an MCP server exposing Jenkins to AI assistants (stdio).
     Mcp(McpArgs),
 }
@@ -82,6 +84,21 @@ pub struct StatusArgs {
     /// Resolve status from a queue item URL instead of job+number.
     #[arg(long)]
     pub queue: Option<String>,
+}
+
+// ---- logs -------------------------------------------------------------
+
+#[derive(Debug, Args)]
+pub struct LogsArgs {
+    pub job: String,
+    /// Build number (defaults to the last build).
+    pub build_number: Option<u64>,
+    /// Keep polling for new output until the build finishes.
+    #[arg(long)]
+    pub follow: bool,
+    /// Seconds between polls when `--follow` is set.
+    #[arg(long, default_value_t = 2)]
+    pub poll: u64,
 }
 
 // ---- job ------------------------------------------------------------------

@@ -32,6 +32,7 @@ fn run(cli: Cli) -> Result<()> {
         Command::Build(args) => commands::build::run(args, &cli.global),
         Command::Status(args) => commands::status::run(args, &cli.global),
         Command::Job(args) => commands::job::run(args, &cli.global),
+        Command::Logs(args) => commands::logs::run(args, &cli.global),
         Command::Mcp(args) => commands::mcp::run(args, &cli.global),
     }
 }
