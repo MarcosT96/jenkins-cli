@@ -56,29 +56,20 @@ pub enum AuthCmd {
 
 #[derive(Debug, Args)]
 pub struct BuildArgs {
-    #[command(subcommand)]
-    pub cmd: Option<BuildCmd>,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum BuildCmd {
-    /// Trigger a build for a job. Default action.
-    Run {
-        job: String,
-        /// Build parameter as key=value (repeatable). Implies
-        /// `buildWithParameters`.
-        #[arg(long = "param")]
-        params: Vec<String>,
-        /// Wait for the build to finish, polling status.
-        #[arg(long)]
-        wait: bool,
-        /// Max seconds to wait when `--wait` is set.
-        #[arg(long, default_value_t = 1800)]
-        timeout: u64,
-        /// Seconds between polls when `--wait` is set.
-        #[arg(long, default_value_t = 3)]
-        poll: u64,
-    },
+    pub job: String,
+    /// Build parameter as key=value (repeatable). Implies
+    /// `buildWithParameters`.
+    #[arg(long = "param")]
+    pub params: Vec<String>,
+    /// Wait for the build to finish, polling status.
+    #[arg(long)]
+    pub wait: bool,
+    /// Max seconds to wait when `--wait` is set.
+    #[arg(long, default_value_t = 1800)]
+    pub timeout: u64,
+    /// Seconds between polls when `--wait` is set.
+    #[arg(long, default_value_t = 3)]
+    pub poll: u64,
 }
 
 // ---- status ---------------------------------------------------------------
