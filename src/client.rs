@@ -61,7 +61,7 @@ impl Client {
         Ok(Self {
             http,
             auth_header: format!("Basic {encoded}"),
-            base: config::normalize_url(base),
+            base: config::parse_base_url(base, "base URL")?,
         })
     }
 
@@ -171,6 +171,32 @@ mod tests {
 
     fn test_client(server: &MockServer) -> Client {
         Client::with_base(&server.base_url(), "me", "tok123", false).unwrap()
+    }
+
+    #[test]
+    fn schemeless_base_url_still_reaches_the_server() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/api/json");
+            then.status(200).body("{}");
+        });
+        let schemeless = server.base_url().trim_start_matches("http://").to_string();
+
+        let client = Client::with_base(&schemeless, "me", "tok123", false).unwrap();
+        client.get_raw("/api/json").unwrap();
+
+        mock.assert();
+    }
+
+    #[test]
+    fn unusable_base_url_error_is_not_a_bare_builder_error() {
+        let client = Client::with_base("ftp://host", "me", "tok", false);
+        let msg = match client {
+            Ok(c) => c.get_raw("/api/json").unwrap_err().to_string(),
+            Err(e) => e.to_string(),
+        };
+        assert!(!msg.contains("builder error"), "got: {msg}");
+        assert!(msg.contains("http"), "got: {msg}");
     }
 
     #[test]

@@ -74,9 +74,41 @@ pub fn save(config: &Config) -> Result<()> {
     Ok(())
 }
 
-/// Normalize a base URL by trimming any trailing slash.
+/// Normalize a base URL: trim whitespace, prepend `http://` when no scheme is
+/// given (e.g. `10.35.0.51:18080`), and drop trailing slashes.
 pub fn normalize_url(url: &str) -> String {
+    let url = url.trim();
+    let url = if url.contains("://") {
+        url.to_string()
+    } else {
+        format!("http://{url}")
+    };
     url.trim_end_matches('/').to_string()
+}
+
+/// Normalize and validate a base URL. `field` names the configuration source
+/// (e.g. `auth.url`) and is surfaced in the error. The offending value is
+/// never echoed, since a URL may embed credentials.
+pub fn parse_base_url(raw: &str, field: &str) -> Result<String> {
+    let invalid = |reason: String| AppError::InvalidUrl {
+        field: field.to_string(),
+        reason,
+    };
+    if raw.trim().is_empty() {
+        return Err(invalid("it is empty".into()));
+    }
+    let normalized = normalize_url(raw);
+    let parsed = reqwest::Url::parse(&normalized).map_err(|e| invalid(e.to_string()))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(invalid(format!(
+            "unsupported scheme \"{}\" (use http or https)",
+            parsed.scheme()
+        )));
+    }
+    if parsed.host_str().is_none_or(str::is_empty) {
+        return Err(invalid("it has no host".into()));
+    }
+    Ok(normalized)
 }
 
 /// Resolve the effective auth: env vars (`JENKINS_URL`/`JENKINS_USER`/
@@ -86,14 +118,39 @@ pub fn require_auth() -> Result<Auth> {
     let env_url = std::env::var("JENKINS_URL").ok();
     let env_user = std::env::var("JENKINS_USER").ok();
     let env_token = std::env::var("JENKINS_TOKEN").ok();
+    let env_insecure = std::env::var("JENKINS_INSECURE").ok();
 
     let file_auth = load()?.auth.unwrap_or_default();
+    let file_label = format!("auth.url in {}", path()?.display());
+
+    resolve_auth(
+        (env_url, env_user, env_token, env_insecure),
+        file_auth,
+        &file_label,
+    )
+}
+
+type EnvAuth = (
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
+
+fn resolve_auth(env: EnvAuth, file_auth: Auth, file_label: &str) -> Result<Auth> {
+    let (env_url, env_user, env_token, env_insecure) = env;
+
+    let url = match (env_url, file_auth.url) {
+        (Some(u), _) => Some(parse_base_url(&u, "JENKINS_URL")?),
+        (None, Some(u)) => Some(parse_base_url(&u, file_label)?),
+        (None, None) => None,
+    };
 
     let auth = Auth {
-        url: env_url.map(|u| normalize_url(&u)).or(file_auth.url),
+        url,
         user: env_user.or(file_auth.user),
         api_token: env_token.or(file_auth.api_token),
-        insecure: std::env::var("JENKINS_INSECURE")
+        insecure: env_insecure
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(file_auth.insecure),
     };
@@ -102,5 +159,77 @@ pub fn require_auth() -> Result<Auth> {
         Ok(auth)
     } else {
         Err(AppError::NoAuth)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(url: &str) -> Auth {
+        Auth {
+            url: Some(url.into()),
+            user: Some("u".into()),
+            api_token: Some("t".into()),
+            insecure: false,
+        }
+    }
+
+    #[test]
+    fn normalizes_scheme_whitespace_and_trailing_slash() {
+        assert_eq!(normalize_url("10.35.0.51:18080"), "http://10.35.0.51:18080");
+        assert_eq!(normalize_url(" https://j.io// "), "https://j.io");
+        assert_eq!(normalize_url("http://j.io"), "http://j.io");
+    }
+
+    #[test]
+    fn rejects_unusable_urls_naming_the_field() {
+        for bad in ["", "   ", "ftp://host", "http://", "http://bad host"] {
+            let err = parse_base_url(bad, "auth.url").unwrap_err().to_string();
+            assert!(err.contains("auth.url"), "{bad:?} -> {err}");
+            assert!(!err.contains("builder error"), "{bad:?} -> {err}");
+        }
+    }
+
+    #[test]
+    fn error_never_echoes_embedded_credentials() {
+        let err = parse_base_url("ftp://user:secret@host", "auth.url")
+            .unwrap_err()
+            .to_string();
+        assert!(!err.contains("secret"), "{err}");
+    }
+
+    #[test]
+    fn file_url_without_scheme_is_fixed_up() {
+        let auth = resolve_auth((None, None, None, None), file("10.35.0.51:18080/"), "f").unwrap();
+        assert_eq!(auth.url.as_deref(), Some("http://10.35.0.51:18080"));
+    }
+
+    #[test]
+    fn env_overrides_file_and_blames_the_env_var() {
+        let ok =
+            resolve_auth((Some("j.io".into()), None, None, None), file("bad://"), "f").unwrap();
+        assert_eq!(ok.url.as_deref(), Some("http://j.io"));
+
+        let err = resolve_auth(
+            (Some("ftp://j".into()), None, None, None),
+            file("j.io"),
+            "f",
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("JENKINS_URL"), "{err}");
+    }
+
+    #[test]
+    fn invalid_file_url_blames_the_file_field() {
+        let err = resolve_auth(
+            (None, None, None, None),
+            file("ftp://j"),
+            "auth.url in ~/x.json",
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("auth.url in ~/x.json"), "{err}");
     }
 }
