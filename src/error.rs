@@ -17,6 +17,11 @@ pub enum AppError {
     )]
     NoAuth,
 
+    /// The configured Jenkins base URL cannot be used. `field` names where it
+    /// came from (env var or config key) so the user knows what to fix.
+    #[error("Invalid Jenkins URL in {field}: {reason}\nExpected something like http://jenkins.example.com:8080. Fix it with \"jenkins auth save\" or the JENKINS_URL env var.")]
+    InvalidUrl { field: String, reason: String },
+
     /// HTTP 401 from Jenkins.
     #[error("Authorization error (HTTP 401). Check your user and API token.")]
     Unauthorized,
