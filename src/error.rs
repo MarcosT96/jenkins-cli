@@ -19,7 +19,7 @@ pub enum AppError {
 
     /// The configured Jenkins base URL cannot be used. `field` names where it
     /// came from (env var or config key) so the user knows what to fix.
-    #[error("Invalid Jenkins URL in {field}: {reason}\nExpected something like http://jenkins.example.com:8080. Fix it with \"jenkins auth save\" or the JENKINS_URL env var.")]
+    #[error("Invalid Jenkins URL in {field}: {reason}\nExpected something like http://localhost:8080. Fix it with \"jenkins auth save\" or the JENKINS_URL env var.")]
     InvalidUrl { field: String, reason: String },
 
     /// HTTP 401 from Jenkins.

@@ -38,7 +38,7 @@ Credentials are stored at `~/.jenkins-cli-config.json` (mode `0600`).
 Environment variables override the config file, useful for CI or containers:
 
 ```sh
-export JENKINS_URL=http://jenkins.example.com:8080
+export JENKINS_URL=http://localhost:8080
 export JENKINS_USER=your-user
 export JENKINS_TOKEN=...
 export JENKINS_INSECURE=1   # accept self-signed TLS certs, if needed

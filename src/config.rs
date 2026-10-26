@@ -24,7 +24,7 @@ pub struct Config {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Auth {
-    /// Jenkins base URL, e.g. "http://jenkins.example.com:8080" (no trailing slash).
+    /// Jenkins base URL, e.g. "http://localhost:8080" (no trailing slash).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

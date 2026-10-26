@@ -28,7 +28,7 @@ fn save() -> Result<()> {
     );
 
     let url: String = Input::new()
-        .with_prompt("Jenkins URL (e.g. http://jenkins.example.com:8080)")
+        .with_prompt("Jenkins URL (e.g. http://localhost:8080)")
         .interact_text()?;
     let user: String = Input::new().with_prompt("Jenkins user").interact_text()?;
     let api_token: String = Password::new().with_prompt("API token").interact()?;
